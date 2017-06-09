@@ -131,34 +131,6 @@ Sea = function () {
     //rotate the geometry on the x axis
     geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 
-    // important: by merging vertices we ensure the continuity of the waves
-    geom.mergeVertices();
-
-
-    // get the vertices
-    var l = geom.vertices.length;
-
-    // create an array to store new data associated to each vertex
-    this.waves = [];
-
-    for (var i = 0; i < l; i++) {
-        // get each vertex
-        var v = geom.vertices[i];
-
-        // store some data associated to it
-        this.waves.push({
-            y: v.y,
-            x: v.x,
-            z: v.z,
-            // a random angle
-            ang: Math.random() * Math.PI * 2,
-            // a random distance
-            amp: 5 + Math.random() * 15,
-            // a random speed between 0.016 and 0.048 radians / frame
-            speed: 0.016 + Math.random() * 0.032
-        });
-    };
-
     //create the material
     var mat = new THREE.MeshPhongMaterial({
         color: Colors.blue,
@@ -172,40 +144,6 @@ Sea = function () {
     this.mesh = new THREE.Mesh(geom, mat);
     //Allow the sea to receive shadows
     this.mesh.receiveShadow = true;
-}
-
-
-// now we create the function that will be called in each frame 
-// to update the position of the vertices to simulate the waves
-
-Sea.prototype.moveWaves = function () {
-
-    // get the vertices
-    var verts = this.mesh.geometry.vertices;
-    var l = verts.length;
-
-    for (var i = 0; i < l; i++) {
-        var v = verts[i];
-
-        // get the data associated to it
-        var vprops = this.waves[i];
-
-        // update the position of the vertex
-        v.x = vprops.x + Math.cos(vprops.ang) * vprops.amp;
-        v.y = vprops.y + Math.sin(vprops.ang) * vprops.amp;
-
-        // increment the angle for the next frame
-        vprops.ang += vprops.speed;
-
-    }
-
-    // Tell the renderer that the geometry of the sea has changed.
-    // In fact, in order to maintain the best level of performance, 
-    // three.js caches the geometries and ignores any changes
-    // unless we add this line
-    this.mesh.geometry.verticesNeedUpdate = true;
-
-    sea.mesh.rotation.z += .005;
 }
 
 var sea;
@@ -303,111 +241,6 @@ Sky = function () {
     }
 }
 
-var Pilot = function () {
-    this.mesh = new THREE.Object3D();
-    this.mesh.name = "pilot";
-
-    // angleHairs is a property used to animate the hair later 
-    this.angleHairs = 0;
-
-    // Body of the pilot
-    var bodyGeom = new THREE.BoxGeometry(15, 15, 15);
-    var bodyMat = new THREE.MeshPhongMaterial({ color: Colors.brown, shading: THREE.FlatShading });
-    var body = new THREE.Mesh(bodyGeom, bodyMat);
-    body.position.set(2, -12, 0);
-    this.mesh.add(body);
-
-    // Face of the pilot
-    var faceGeom = new THREE.BoxGeometry(10, 10, 10);
-    var faceMat = new THREE.MeshLambertMaterial({ color: Colors.pink });
-    var face = new THREE.Mesh(faceGeom, faceMat);
-    this.mesh.add(face);
-
-    // Hair element
-    var hairGeom = new THREE.BoxGeometry(4, 4, 4);
-    var hairMat = new THREE.MeshLambertMaterial({ color: Colors.brown });
-    var hair = new THREE.Mesh(hairGeom, hairMat);
-    // Align the shape of the hair to its bottom boundary, that will make it easier to scale.
-    hair.geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, 2, 0));
-
-    // create a container for the hair
-    var hairs = new THREE.Object3D();
-
-    // create a container for the hairs at the top 
-    // of the head (the ones that will be animated)
-    this.hairsTop = new THREE.Object3D();
-
-    // create the hairs at the top of the head 
-    // and position them on a 3 x 4 grid
-    for (var i = 0; i < 12; i++) {
-        var h = hair.clone();
-        var col = i % 3;
-        var row = Math.floor(i / 3);
-        var startPosZ = -4;
-        var startPosX = -4;
-        h.position.set(startPosX + row * 4, 0, startPosZ + col * 4);
-        this.hairsTop.add(h);
-    }
-    hairs.add(this.hairsTop);
-
-    // create the hairs at the side of the face
-    var hairSideGeom = new THREE.BoxGeometry(12, 4, 2);
-    hairSideGeom.applyMatrix(new THREE.Matrix4().makeTranslation(-6, 0, 0));
-    var hairSideR = new THREE.Mesh(hairSideGeom, hairMat);
-    var hairSideL = hairSideR.clone();
-    hairSideR.position.set(8, -2, 6);
-    hairSideL.position.set(8, -2, -6);
-    hairs.add(hairSideR);
-    hairs.add(hairSideL);
-
-    // create the hairs at the back of the head
-    var hairBackGeom = new THREE.BoxGeometry(2, 8, 10);
-    var hairBack = new THREE.Mesh(hairBackGeom, hairMat);
-    hairBack.position.set(-1, -4, 0)
-    hairs.add(hairBack);
-    hairs.position.set(-5, 5, 0);
-
-    this.mesh.add(hairs);
-
-    var glassGeom = new THREE.BoxGeometry(5, 5, 5);
-    var glassMat = new THREE.MeshLambertMaterial({ color: Colors.brown });
-    var glassR = new THREE.Mesh(glassGeom, glassMat);
-    glassR.position.set(6, 0, 3);
-    var glassL = glassR.clone();
-    glassL.position.z = -glassR.position.z
-
-    var glassAGeom = new THREE.BoxGeometry(11, 1, 11);
-    var glassA = new THREE.Mesh(glassAGeom, glassMat);
-    this.mesh.add(glassR);
-    this.mesh.add(glassL);
-    this.mesh.add(glassA);
-
-    var earGeom = new THREE.BoxGeometry(2, 3, 2);
-    var earL = new THREE.Mesh(earGeom, faceMat);
-    earL.position.set(0, 0, -6);
-    var earR = earL.clone();
-    earR.position.set(0, 0, 6);
-    this.mesh.add(earL);
-    this.mesh.add(earR);
-}
-
-// move the hair
-Pilot.prototype.updateHairs = function () {
-
-    // get the hair
-    var hairs = this.hairsTop.children;
-
-    // update them according to the angle angleHairs
-    var l = hairs.length;
-    for (var i = 0; i < l; i++) {
-        var h = hairs[i];
-        // each hair element will scale on cyclical basis between 75% and 100% of its original size
-        h.scale.y = .75 + Math.cos(this.angleHairs + i / 3) * .25;
-    }
-    // increment the angle for the next frame
-    this.angleHairs += 0.16;
-}
-
 // Now we instantiate the sky and push its center a bit
 // towards the bottom of the screen
 
@@ -419,153 +252,68 @@ function createSky() {
     scene.add(sky.mesh);
 }
 
-
 var AirPlane = function () {
     this.mesh = new THREE.Object3D();
-    this.mesh.name = "airPlane";
 
-    // Cabin
+    //create the cabin
+    var geomCockpit = new THREE.BoxGeometry(60, 50, 50, 1, 1, 1);
+    var matCockpit = new THREE.MeshPhongMaterial({
+        color: Colors.red,
+        shading: THREE.FlatShading
+    });
+    var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
+    cockpit.castShadow = true;
+    cockpit.receiveShadow = true;
+    this.mesh.add(cockpit);
 
-    var geomCabin = new THREE.BoxGeometry(80, 50, 50, 1, 1, 1);
-    var matCabin = new THREE.MeshPhongMaterial({ color: Colors.red, shading: THREE.FlatShading });
-
-    geomCabin.vertices[4].y -= 10;
-    geomCabin.vertices[4].z += 20;
-    geomCabin.vertices[5].y -= 10;
-    geomCabin.vertices[5].z -= 20;
-    geomCabin.vertices[6].y += 30;
-    geomCabin.vertices[6].z += 20;
-    geomCabin.vertices[7].y += 30;
-    geomCabin.vertices[7].z -= 20;
-
-    var cabin = new THREE.Mesh(geomCabin, matCabin);
-    cabin.castShadow = true;
-    cabin.receiveShadow = true;
-    this.mesh.add(cabin);
-
-    // Engine
-
+    //create the engine
     var geomEngine = new THREE.BoxGeometry(20, 50, 50, 1, 1, 1);
-    var matEngine = new THREE.MeshPhongMaterial({ color: Colors.white, shading: THREE.FlatShading });
+    var matEngine = new THREE.MeshPhongMaterial({
+        color: Colors.white,
+        shading: THREE.FlatShading
+    });
     var engine = new THREE.Mesh(geomEngine, matEngine);
-    engine.position.x = 50;
+    engine.position.x = 40;
     engine.castShadow = true;
     engine.receiveShadow = true;
     this.mesh.add(engine);
 
-    // Tail Plane
-
+    // Create the tail
     var geomTailPlane = new THREE.BoxGeometry(15, 20, 5, 1, 1, 1);
     var matTailPlane = new THREE.MeshPhongMaterial({ color: Colors.red, shading: THREE.FlatShading });
     var tailPlane = new THREE.Mesh(geomTailPlane, matTailPlane);
-    tailPlane.position.set(-40, 20, 0);
+    tailPlane.position.set(-35, 25, 0);
     tailPlane.castShadow = true;
     tailPlane.receiveShadow = true;
     this.mesh.add(tailPlane);
 
-    // Wings
-
-    var geomSideWing = new THREE.BoxGeometry(30, 5, 120, 1, 1, 1);
+    // Create the wing
+    var geomSideWing = new THREE.BoxGeometry(40, 8, 150, 1, 1, 1);
     var matSideWing = new THREE.MeshPhongMaterial({ color: Colors.red, shading: THREE.FlatShading });
     var sideWing = new THREE.Mesh(geomSideWing, matSideWing);
-    sideWing.position.set(0, 15, 0);
     sideWing.castShadow = true;
     sideWing.receiveShadow = true;
     this.mesh.add(sideWing);
 
-    var geomWindshield = new THREE.BoxGeometry(3, 15, 20, 1, 1, 1);
-    var matWindshield = new THREE.MeshPhongMaterial({ color: Colors.white, transparent: true, opacity: .3, shading: THREE.FlatShading });;
-    var windshield = new THREE.Mesh(geomWindshield, matWindshield);
-    windshield.position.set(5, 27, 0);
-
-    windshield.castShadow = true;
-    windshield.receiveShadow = true;
-
-    this.mesh.add(windshield);
-
+    // propeller
     var geomPropeller = new THREE.BoxGeometry(20, 10, 10, 1, 1, 1);
-    geomPropeller.vertices[4].y -= 5;
-    geomPropeller.vertices[4].z += 5;
-    geomPropeller.vertices[5].y -= 5;
-    geomPropeller.vertices[5].z -= 5;
-    geomPropeller.vertices[6].y += 5;
-    geomPropeller.vertices[6].z += 5;
-    geomPropeller.vertices[7].y += 5;
-    geomPropeller.vertices[7].z -= 5;
     var matPropeller = new THREE.MeshPhongMaterial({ color: Colors.brown, shading: THREE.FlatShading });
     this.propeller = new THREE.Mesh(geomPropeller, matPropeller);
-
     this.propeller.castShadow = true;
     this.propeller.receiveShadow = true;
 
-    var geomBlade = new THREE.BoxGeometry(1, 80, 10, 1, 1, 1);
+    // blades
+    var geomBlade = new THREE.BoxGeometry(1, 100, 20, 1, 1, 1);
     var matBlade = new THREE.MeshPhongMaterial({ color: Colors.brownDark, shading: THREE.FlatShading });
-    var blade1 = new THREE.Mesh(geomBlade, matBlade);
-    blade1.position.set(8, 0, 0);
 
-    blade1.castShadow = true;
-    blade1.receiveShadow = true;
-
-    var blade2 = blade1.clone();
-    blade2.rotation.x = Math.PI / 2;
-
-    blade2.castShadow = true;
-    blade2.receiveShadow = true;
-
-    this.propeller.add(blade1);
-    this.propeller.add(blade2);
-    this.propeller.position.set(60, 0, 0);
+    var blade = new THREE.Mesh(geomBlade, matBlade);
+    blade.position.set(8, 0, 0);
+    blade.castShadow = true;
+    blade.receiveShadow = true;
+    this.propeller.add(blade);
+    this.propeller.position.set(50, 0, 0);
     this.mesh.add(this.propeller);
-
-    var wheelProtecGeom = new THREE.BoxGeometry(30, 15, 10, 1, 1, 1);
-    var wheelProtecMat = new THREE.MeshPhongMaterial({ color: Colors.red, shading: THREE.FlatShading });
-    var wheelProtecR = new THREE.Mesh(wheelProtecGeom, wheelProtecMat);
-    wheelProtecR.position.set(25, -20, 25);
-    this.mesh.add(wheelProtecR);
-
-    var wheelTireGeom = new THREE.BoxGeometry(24, 24, 4);
-    var wheelTireMat = new THREE.MeshPhongMaterial({ color: Colors.brownDark, shading: THREE.FlatShading });
-    var wheelTireR = new THREE.Mesh(wheelTireGeom, wheelTireMat);
-    wheelTireR.position.set(25, -28, 25);
-
-    var wheelAxisGeom = new THREE.BoxGeometry(10, 10, 6);
-    var wheelAxisMat = new THREE.MeshPhongMaterial({ color: Colors.brown, shading: THREE.FlatShading });
-    var wheelAxis = new THREE.Mesh(wheelAxisGeom, wheelAxisMat);
-    wheelTireR.add(wheelAxis);
-
-    this.mesh.add(wheelTireR);
-
-    var wheelProtecL = wheelProtecR.clone();
-    wheelProtecL.position.z = -wheelProtecR.position.z;
-    this.mesh.add(wheelProtecL);
-
-    var wheelTireL = wheelTireR.clone();
-    wheelTireL.position.z = -wheelTireR.position.z;
-    this.mesh.add(wheelTireL);
-
-    var wheelTireB = wheelTireR.clone();
-    wheelTireB.scale.set(.5, .5, .5);
-    wheelTireB.position.set(-35, -5, 0);
-    this.mesh.add(wheelTireB);
-
-    var suspensionGeom = new THREE.BoxGeometry(4, 20, 4);
-    suspensionGeom.applyMatrix(new THREE.Matrix4().makeTranslation(0, 10, 0))
-    var suspensionMat = new THREE.MeshPhongMaterial({ color: Colors.red, shading: THREE.FlatShading });
-    var suspension = new THREE.Mesh(suspensionGeom, suspensionMat);
-    suspension.position.set(-35, -5, 0);
-    suspension.rotation.z = -.3;
-    this.mesh.add(suspension);
-
-    this.pilot = new Pilot();
-    this.pilot.mesh.position.set(-10, 27, 0);
-    this.mesh.add(this.pilot.mesh);
-
-
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
-
-};
-
+}
 
 var airplane;
 
@@ -589,7 +337,6 @@ function updatePlane() {
     airplane.mesh.position.x = targetX;
     //rotate the prppeller, the sea and the sky
     airplane.propeller.rotation.x += 0.3;
-    airplane.pilot.updateHairs();
 }
 
 function normalize(v, vmin, vmax, tmin, tmax) {
@@ -607,7 +354,6 @@ function loop() {
 
     //update the plabe on each frame
     updatePlane();
-    sea.moveWaves();
 
     //render tge scene
     renderer.render(scene, camera);
@@ -625,6 +371,7 @@ var mousePos = {
 function handleMouseMove(event) {
     // here we are converting the mouse position value recived to a normalized value varying between -1 and 1
     //this is the formula for the horizontal axis
+    console.log(event);
     var tx = -1 + (event.clientX / WIDTH) * 2;
 
     //for the vertical axis, we need to inverse the formula
