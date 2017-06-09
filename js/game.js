@@ -324,18 +324,60 @@ function createPlane() {
     scene.add(airplane.mesh);
 }
 
-function loop() {
+function updatePlane() {
+    //let's move the plane between -100 and 100 on the horizontal axis
+    //and between 25 and 175 on the vertical axis,
+    //depending on the mouse position which ranges between -1 and 1 on both axes;
+    //to achieve that we use a normalize function 
+    var targetX = normalize(mousePos.x, -1, 1, -100, 100);
+    var targetY = normalize(mousePos.y, -1, 1, 25, 175);
 
+    //update the airplane position
+    airplane.mesh.position.y = targetY;
+    airplane.mesh.position.x = targetX;
     //rotate the prppeller, the sea and the sky
     airplane.propeller.rotation.x += 0.3;
+}
+
+function normalize(v, vmin, vmax, tmin, tmax) {
+    var nv = Math.max(Math.min(v, vmax), vmin);
+    var dv = vmax - vmin;
+    var pc = (nv - vmin) / dv;
+    var dt = tmax - tmin;
+    var tv = tmin + (pc * dt);
+    return tv;
+}
+
+function loop() {
     sea.mesh.rotation.z += 0.005;
     sky.mesh.rotation.z += 0.01;
+
+    //update the plabe on each frame
+    updatePlane();
 
     //render tge scene
     renderer.render(scene, camera);
 
     //call the loop function again
     requestAnimationFrame(loop);
+}
+
+var mousePos = {
+    x: 0,
+    y: 0
+};
+
+//handle the mouse event
+function handleMouseMove(event) {
+    // here we are converting the mouse position value recived to a normalized value varying between -1 and 1
+    //this is the formula for the horizontal axis
+    console.log(event);
+    var tx = -1 + (event.clientX / WIDTH) * 2;
+
+    //for the vertical axis, we need to inverse the formula
+    //because the 2D yaxis goes the opposite direction of the 3D y-axis
+    var ty = 1 - (event.clientY / HEIGHT) * 2;
+    mousePos = { x: tx, y: ty };
 }
 
 function init() {
@@ -351,6 +393,9 @@ function init() {
 
     createSky();
     createPlane();
+
+    //add the listener
+    document.addEventListener('mousemove', handleMouseMove, false);
 
     // start a loop that will update the objects' positions 
     // and render the scene on each frame
