@@ -208,7 +208,7 @@ Sea.prototype.moveWaves = function () {
     // unless we add this line
     this.mesh.geometry.verticesNeedUpdate = true;
 
-    sea.mesh.rotation.z += .005;
+    // sea.mesh.rotation.z += 1.005;
 }
 
 var sea;
