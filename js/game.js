@@ -89,6 +89,9 @@ function handleWindowResize() {
 }
 
 function createLights() {
+    // an ambient light modifies the global color of a scene and makes the shadows softer
+    ambientLight = new THREE.AmbientLight(0xdc8874, .5);
+    scene.add(ambientLight);
     //A hemsphere light is a gradient colored light
     //the first parameter is the sky color, the second parameter is the groudn color,
     //the third parameter is the intensity of the light
@@ -585,8 +588,15 @@ function updatePlane() {
     var targetY = normalize(mousePos.y, -1, 1, 25, 175);
 
     //update the airplane position
-    airplane.mesh.position.y = targetY;
+    // Move the plane at each frame by adding a fraction of the remaining distance
+    airplane.mesh.position.y += (targetY - airplane.mesh.position.y) * 0.1;
+    // airplane.mesh.position.y = targetY;
     airplane.mesh.position.x = targetX;
+
+    // Rotate the plane proportionally to the remaining distance
+    airplane.mesh.rotation.z = (targetY - airplane.mesh.position.y) * 0.0128;
+    airplane.mesh.rotation.x = (airplane.mesh.position.y - targetY) * 0.0064;
+
     //rotate the prppeller, the sea and the sky
     airplane.propeller.rotation.x += 0.3;
     airplane.pilot.updateHairs();
